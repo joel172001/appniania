@@ -9,11 +9,16 @@ export type Profile = {
   id: string;
   email: string;
   full_name: string | null;
+  phone_number: string | null;
   usdt_address: string | null;
   balance: number;
   earnings_balance: number;
   total_invested: number;
   total_earnings: number;
+  referral_code: string | null;
+  referred_by: string | null;
+  profile_photo_url: string | null;
+  verification_status: string | null;
   created_at: string;
   updated_at: string;
 };
