@@ -80,7 +80,22 @@ export function Dashboard() {
             </div>
 
             <div className="hidden md:flex items-center gap-4">
-              <span className="text-slate-300 text-sm">{profile?.email}</span>
+              <div className="flex items-center gap-3">
+                {profile?.profile_photo_url ? (
+                  <img
+                    src={profile.profile_photo_url}
+                    alt="Profile"
+                    className="w-9 h-9 rounded-full object-cover ring-2 ring-blue-500/50"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-blue-500/50">
+                    <span className="text-white text-sm font-bold">
+                      {profile?.full_name?.charAt(0).toUpperCase() || profile?.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className="text-slate-300 text-sm">{profile?.email}</span>
+              </div>
               <NotificationsPanel />
               <button
                 onClick={() => setShowSettings(true)}
@@ -110,7 +125,25 @@ export function Dashboard() {
 
           {mobileMenuOpen && (
             <div className="md:hidden border-t border-slate-700 py-4 space-y-3">
-              <div className="px-4 py-2 text-slate-300 text-sm">{profile?.email}</div>
+              <div className="px-4 py-2 flex items-center gap-3">
+                {profile?.profile_photo_url ? (
+                  <img
+                    src={profile.profile_photo_url}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/50"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-blue-500/50">
+                    <span className="text-white text-sm font-bold">
+                      {profile?.full_name?.charAt(0).toUpperCase() || profile?.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <p className="text-white text-sm font-medium">{profile?.full_name || 'User'}</p>
+                  <p className="text-slate-400 text-xs">{profile?.email}</p>
+                </div>
+              </div>
               <button
                 onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}
                 className="w-full text-left px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition-colors flex items-center gap-2"
