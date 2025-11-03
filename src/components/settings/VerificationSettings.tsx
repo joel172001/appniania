@@ -13,6 +13,7 @@ export function VerificationSettings() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [verification, setVerification] = useState<any>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -23,16 +24,24 @@ export function VerificationSettings() {
   const loadVerification = async () => {
     if (!user) return;
 
-    const { data } = await supabase
-      .from('identity_verifications')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('identity_verifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (data) {
-      setVerification(data);
+      if (error) {
+        console.error('Error loading verification:', error);
+      } else if (data) {
+        setVerification(data);
+      }
+    } catch (err) {
+      console.error('Error loading verification:', err);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -98,6 +107,7 @@ export function VerificationSettings() {
           selfie_url: selfieUrl,
           passport_number: documentType === 'passport' ? passportNumber : null,
           status: 'pending',
+          submitted_at: new Date().toISOString(),
         });
 
       if (insertError) throw insertError;
@@ -140,6 +150,20 @@ export function VerificationSettings() {
       </div>
     );
   };
+
+  if (initialLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-xl font-bold text-white mb-4">Identity Verification</h3>
+          <p className="text-slate-400 text-sm mb-6">Loading verification status...</p>
+        </div>
+        <div className="flex justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
 
   if (verification) {
     return (
