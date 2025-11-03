@@ -131,6 +131,7 @@ export function VerificationSettings() {
       pending: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50',
       in_review: 'bg-blue-500/20 text-blue-400 border-blue-500/50',
       verified: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50',
+      aprovado: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50',
       rejected: 'bg-red-500/20 text-red-400 border-red-500/50',
     };
 
@@ -138,13 +139,15 @@ export function VerificationSettings() {
       pending: Clock,
       in_review: AlertCircle,
       verified: Check,
+      aprovado: Check,
       rejected: X,
     };
 
-    const Icon = icons[status];
+    const Icon = icons[status] || AlertCircle;
+    const style = styles[status] || 'bg-slate-500/20 text-slate-400 border-slate-500/50';
 
     return (
-      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${styles[status]}`}>
+      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${style}`}>
         <Icon size={16} />
         <span className="text-sm font-medium capitalize">{status.replace('_', ' ')}</span>
       </div>
@@ -197,7 +200,7 @@ export function VerificationSettings() {
               </div>
             )}
 
-            {verification.status === 'verified' && (
+            {(verification.status === 'verified' || verification.status === 'aprovado') && (
               <div className="bg-emerald-500/10 border border-emerald-500/50 rounded-lg p-4">
                 <p className="text-emerald-400 text-sm flex items-center gap-2">
                   <Check size={18} />
