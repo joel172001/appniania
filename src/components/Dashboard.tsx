@@ -7,7 +7,10 @@ import {
   Plus,
   Clock,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Settings as SettingsIcon,
+  Menu,
+  X as XIcon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase, Investment, Transaction } from '../lib/supabase';
@@ -15,9 +18,9 @@ import { InvestmentPlans } from './InvestmentPlans';
 import { DepositModal } from './DepositModal';
 import { WithdrawalModal } from './WithdrawalModal';
 import { TransactionHistory } from './TransactionHistory';
-import { DailyTasks } from './DailyTasks';
 import { TransferModal } from './TransferModal';
 import { NotificationsPanel } from './NotificationsPanel';
+import { Settings } from './Settings';
 
 export function Dashboard() {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -27,6 +30,8 @@ export function Dashboard() {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,27 +69,64 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      <nav className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700">
+      <nav className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
                 <span className="text-lg font-bold text-white">Ci</span>
               </div>
-              <span className="text-xl font-bold text-white">CryptoInvest</span>
+              <span className="text-lg sm:text-xl font-bold text-white hidden sm:inline">CryptoInvest</span>
             </div>
-            <div className="flex items-center gap-4">
+
+            <div className="hidden md:flex items-center gap-4">
               <span className="text-slate-300 text-sm">{profile?.email}</span>
               <NotificationsPanel />
               <button
+                onClick={() => setShowSettings(true)}
+                className="text-slate-300 hover:text-white transition-colors"
+              >
+                <SettingsIcon size={20} />
+              </button>
+              <button
                 onClick={signOut}
-                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white transition-colors text-sm"
               >
                 <LogOut size={18} />
                 Logout
               </button>
             </div>
+
+            <div className="md:hidden flex items-center gap-2">
+              <NotificationsPanel />
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-slate-300 hover:text-white transition-colors p-2"
+              >
+                {mobileMenuOpen ? <XIcon size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
+
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-slate-700 py-4 space-y-3">
+              <div className="px-4 py-2 text-slate-300 text-sm">{profile?.email}</div>
+              <button
+                onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}
+                className="w-full text-left px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition-colors flex items-center gap-2"
+              >
+                <SettingsIcon size={18} />
+                Settings
+              </button>
+              <button
+                onClick={() => { signOut(); setMobileMenuOpen(false); }}
+                className="w-full text-left px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition-colors flex items-center gap-2"
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -250,6 +292,10 @@ export function Dashboard() {
           onClose={() => setShowTransferModal(false)}
           onTransferCompleted={loadDashboardData}
         />
+      )}
+
+      {showSettings && (
+        <Settings onClose={() => setShowSettings(false)} />
       )}
     </div>
   );
