@@ -6,7 +6,7 @@ type AuthContextType = {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, phoneNumber: string, referralCode?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -60,17 +60,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, phoneNumber: string, referralCode?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (!error && data.user) {
+      let referrerId = null;
+
+      if (referralCode) {
+        const { data: referrerData } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('referral_code', referralCode)
+          .maybeSingle();
+
+        if (referrerData) {
+          referrerId = referrerData.id;
+        }
+      }
+
       const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         email,
         full_name: fullName,
+        phone_number: phoneNumber,
+        referred_by: referrerId,
         balance: 0,
         total_invested: 0,
         total_earnings: 0,

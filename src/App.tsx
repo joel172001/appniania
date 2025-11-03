@@ -17,7 +17,7 @@ function AppContent() {
   }
 
   if (user) return <Dashboard />;
-  if (showAuth) return <AuthForm />;
+  if (showAuth) return <AuthForm onBack={() => setShowAuth(false)} />;
   return <LandingPage onGetStarted={() => setShowAuth(true)} />;
 }
 

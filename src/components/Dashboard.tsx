@@ -88,60 +88,60 @@ export function Dashboard() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-slate-400 text-sm">Total Balance</span>
-              <Wallet className="text-emerald-400" size={20} />
+              <span className="text-slate-400 text-xs sm:text-sm">Total Balance</span>
+              <Wallet className="text-emerald-400" size={18} />
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
               ${profile?.balance.toFixed(2) || '0.00'}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
               <button
                 onClick={() => setShowDepositModal(true)}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <Plus size={16} />
+                <Plus size={14} />
                 Deposit
               </button>
               <button
                 onClick={() => setShowWithdrawalModal(true)}
-                className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+                className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
               >
-                <ArrowUpRight size={16} />
+                <ArrowUpRight size={14} />
                 Withdraw
               </button>
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-slate-400 text-sm">Total Invested</span>
-              <DollarSign className="text-blue-400" size={20} />
+              <span className="text-slate-400 text-xs sm:text-sm">Total Invested</span>
+              <DollarSign className="text-blue-400" size={18} />
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
               ${profile?.total_invested.toFixed(2) || '0.00'}
             </div>
-            <div className="flex items-center gap-1 text-sm text-blue-400 mt-2">
-              <ArrowUpRight size={16} />
-              {activeInvestments.length} active investments
+            <div className="flex items-center gap-1 text-xs sm:text-sm text-blue-400 mt-2">
+              <ArrowUpRight size={14} />
+              {activeInvestments.length} active
             </div>
           </div>
 
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-slate-400 text-sm">Total Earnings</span>
-              <TrendingUp className="text-cyan-400" size={20} />
+              <span className="text-slate-400 text-xs sm:text-sm">Total Earnings</span>
+              <TrendingUp className="text-cyan-400" size={18} />
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
               ${profile?.total_earnings.toFixed(2) || '0.00'}
             </div>
             <button
               onClick={() => setShowTransferModal(true)}
               disabled={!profile?.total_earnings || profile.total_earnings < 10}
-              className="mt-4 w-full bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-sm"
+              className="mt-3 sm:mt-4 w-full bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm"
             >
               <ArrowDownRight size={16} />
               Transfer to Balance
@@ -149,19 +149,15 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="mb-8">
-          <DailyTasks />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white">Active Investments</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-white">Active Investments</h2>
               <button
                 onClick={() => setShowInvestmentPlans(true)}
-                className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-cyan-600 transition-all flex items-center gap-2"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-cyan-600 transition-all flex items-center justify-center gap-2 text-sm"
               >
-                <Plus size={18} />
+                <Plus size={16} />
                 New Investment
               </button>
             </div>
