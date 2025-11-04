@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #1e40af 50%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:active {
+            background: #1d4ed8;
+        }
+        #loading {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prueba de Conexión</h1>
+        <div id="loading"></div>
+        <div id="status"></div>
+        <button onclick="testConnection()" style="display:none;" id="retryBtn">Reintentar</button>
+        <button onclick="goToApp()" style="display:none;" id="appBtn">Ir a la Aplicación</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://cuqgycpkzjmbjhpvrjru.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1cWd5Y3BremptYmpocHZyanJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3NzE3MTUsImV4cCI6MjA3NTM0NzcxNX0.zqi1C1lZBom6K1N1RUkTO5vJsaIPSNf6uhD8uh9t9AI';
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            const loading = document.getElementById('loading');
+            const retryBtn = document.getElementById('retryBtn');
+            const appBtn = document.getElementById('appBtn');
+
+            loading.style.display = 'none';
+            status.className = 'status ' + type;
+            status.textContent = message;
+
+            if (type === 'success') {
+                appBtn.style.display = 'block';
+                retryBtn.style.display = 'none';
+            } else if (type === 'error') {
+                retryBtn.style.display = 'block';
+                appBtn.style.display = 'none';
+            }
+        }
+
+        async function testConnection() {
+            const loading = document.getElementById('loading');
+            const retryBtn = document.getElementById('retryBtn');
+            const appBtn = document.getElementById('appBtn');
+
+            loading.style.display = 'block';
+            retryBtn.style.display = 'none';
+            appBtn.style.display = 'none';
+
+            try {
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    showStatus('Error de conexión: ' + error.message, 'error');
+                } else {
+                    showStatus('✓ Conexión exitosa! La app funciona correctamente.', 'success');
+                }
+            } catch (err) {
+                showStatus('Error: ' + err.message, 'error');
+            }
+        }
+
+        function goToApp() {
+            window.location.href = '/';
+        }
+
+        testConnection();
+    </script>
+</body>
+</html>
