@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { WithdrawalVoucher } from './WithdrawalVoucher';
 
 type WithdrawalModalProps = {
   onClose: () => void;
@@ -15,6 +16,8 @@ export function WithdrawalModal({ onClose, onWithdrawalCreated }: WithdrawalModa
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showVoucher, setShowVoucher] = useState(false);
+  const [voucherData, setVoucherData] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,13 +47,21 @@ export function WithdrawalModal({ onClose, onWithdrawalCreated }: WithdrawalModa
     }
 
     try {
-      const { error: withdrawalError } = await supabase.from('withdrawal_requests').insert({
-        user_id: user.id,
-        amount: withdrawalAmount,
-        usdt_address: usdtAddress,
-        status: 'pending',
-        requested_at: new Date().toISOString(),
-      });
+      const commission = withdrawalAmount * 0.10;
+      const netAmount = withdrawalAmount - commission;
+      const newBalance = profile.balance - withdrawalAmount;
+
+      const { data: withdrawalData, error: withdrawalError } = await supabase
+        .from('withdrawal_requests')
+        .insert({
+          user_id: user.id,
+          amount: withdrawalAmount,
+          usdt_address: usdtAddress,
+          status: 'pending',
+          requested_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
       if (withdrawalError) throw withdrawalError;
 
@@ -64,26 +75,49 @@ export function WithdrawalModal({ onClose, onWithdrawalCreated }: WithdrawalModa
 
       if (transactionError) throw transactionError;
 
-      if (profile.usdt_address !== usdtAddress) {
-        await supabase
-          .from('profiles')
-          .update({ usdt_address: usdtAddress })
-          .eq('id', user.id);
-      }
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({
+          balance: newBalance,
+          usdt_address: usdtAddress
+        })
+        .eq('id', user.id);
+
+      if (balanceError) throw balanceError;
 
       await refreshProfile();
 
+      const timestamp = new Date().toLocaleString('es-ES', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+
+      setVoucherData({
+        id: withdrawalData.id,
+        amount: withdrawalAmount,
+        address: usdtAddress,
+        timestamp: timestamp,
+        commission: commission,
+        netAmount: netAmount
+      });
+
       setSuccess(true);
-      setTimeout(() => {
-        onWithdrawalCreated();
-        onClose();
-      }, 2500);
+      setShowVoucher(true);
+      onWithdrawalCreated();
     } catch (err: any) {
       setError(err.message || 'Failed to submit withdrawal request');
     } finally {
       setLoading(false);
     }
   };
+
+  if (showVoucher && voucherData) {
+    return <WithdrawalVoucher onClose={onClose} withdrawalData={voucherData} />;
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
