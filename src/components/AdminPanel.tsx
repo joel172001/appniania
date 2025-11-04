@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { CheckCircle, XCircle, DollarSign, ArrowDownToLine, ArrowUpFromLine, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, DollarSign, ArrowDownToLine, ArrowUpFromLine, RefreshCw, Lock } from 'lucide-react';
 
 type PendingDeposit = {
   id: string;
@@ -21,10 +21,101 @@ type PendingWithdrawal = {
 };
 
 export function AdminPanel() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
   const [deposits, setDeposits] = useState<PendingDeposit[]>([]);
   const [withdrawals, setWithdrawals] = useState<PendingWithdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+
+  useEffect(() => {
+    const auth = sessionStorage.getItem('admin_authenticated');
+    if (auth === 'true') {
+      setIsAuthenticated(true);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Admin2024!';
+
+    if (password === correctPassword) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('admin_authenticated', 'true');
+      setAuthError('');
+    } else {
+      setAuthError('Contraseña incorrecta');
+      setPassword('');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('admin_authenticated');
+    setPassword('');
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700 p-8 max-w-md w-full">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-blue-500/20 rounded-full">
+              <Lock size={48} className="text-blue-400" />
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-bold text-white text-center mb-2">
+            Panel de Administración
+          </h1>
+          <p className="text-slate-400 text-center mb-8">
+            Ingresa la contraseña para acceder
+          </p>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                placeholder="Ingresa la contraseña"
+                autoFocus
+              />
+            </div>
+
+            {authError && (
+              <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                {authError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all"
+            >
+              Iniciar Sesión
+            </button>
+          </form>
+
+          <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
+            <p className="text-slate-400 text-xs text-center">
+              La contraseña por defecto es: <code className="text-blue-400">Admin2024!</code>
+            </p>
+            <p className="text-slate-400 text-xs text-center mt-2">
+              Puedes cambiarla en el archivo .env
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const loadData = async () => {
     setLoading(true);
@@ -156,14 +247,23 @@ export function AdminPanel() {
             <h1 className="text-4xl font-bold text-white mb-2">Panel de Administración</h1>
             <p className="text-slate-300">Gestiona depósitos y retiros pendientes</p>
           </div>
-          <button
-            onClick={loadData}
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-          >
-            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-            Actualizar
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={loadData}
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+              Actualizar
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+            >
+              <Lock size={20} />
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
