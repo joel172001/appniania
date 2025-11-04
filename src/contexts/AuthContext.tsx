@@ -20,14 +20,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (data) {
-      setProfile(data);
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      if (data) {
+        setProfile(data);
+      }
+    } catch (err) {
+      console.error('Error in fetchProfile:', err);
     }
   };
 
@@ -38,27 +47,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id).catch(console.error);
+    let mounted = true;
+
+    const initAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (!mounted) return;
+
+        if (error) {
+          console.error('Session error:', error);
+          setLoading(false);
+          return;
+        }
+
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await fetchProfile(session.user.id);
+        }
+
+        setLoading(false);
+      } catch (err) {
+        console.error('Init auth error:', err);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    }).catch((error) => {
-      console.error('Error getting session:', error);
-      setLoading(false);
-    });
+    };
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+
       setUser(session?.user ?? null);
+
       if (session?.user) {
-        fetchProfile(session.user.id).catch(console.error);
+        fetchProfile(session.user.id);
       } else {
         setProfile(null);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string, phoneNumber: string, referralCode?: string) => {
@@ -86,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: data.user.id,
         email,
         full_name: fullName,
-        phone_number: phoneNumber,
+        phone: phoneNumber,
         referred_by: referrerId,
         balance: 0,
         total_invested: 0,
