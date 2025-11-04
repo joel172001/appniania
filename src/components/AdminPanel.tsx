@@ -92,7 +92,7 @@ export function AdminPanel() {
         .order('created_at', { ascending: false });
 
       const { data: withdrawalsData, error: wError } = await supabase
-        .from('withdrawals')
+        .from('withdrawal_requests')
         .select(`
           id,
           user_id,
@@ -153,9 +153,10 @@ export function AdminPanel() {
       if (balanceError) throw balanceError;
 
       const { error: notifError } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .insert({
           user_id: userId,
+          type: 'success',
           title: 'Depósito Aprobado',
           message: `Tu depósito de $${amount} ha sido aprobado y agregado a tu balance.`
         });
@@ -188,9 +189,10 @@ export function AdminPanel() {
       if (txError) throw txError;
 
       const { error: notifError } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .insert({
           user_id: userId,
+          type: 'error',
           title: 'Depósito Rechazado',
           message: `Tu depósito de $${amount} fue rechazado. Razón: ${reason}`
         });
@@ -213,19 +215,20 @@ export function AdminPanel() {
     setProcessing(id);
     try {
       const { error: wError } = await supabase
-        .from('withdrawals')
+        .from('withdrawal_requests')
         .update({
           status: 'completed',
-          admin_note: txHash ? `TX Hash: ${txHash}` : 'Aprobado'
+          admin_notes: txHash ? `TX Hash: ${txHash}` : 'Aprobado'
         })
         .eq('id', id);
 
       if (wError) throw wError;
 
       const { error: notifError } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .insert({
           user_id: userId,
+          type: 'success',
           title: 'Retiro Aprobado',
           message: `Tu retiro de $${amount} ha sido procesado y enviado a tu dirección.${txHash ? ` TX: ${txHash}` : ''}`
         });
@@ -248,10 +251,10 @@ export function AdminPanel() {
     setProcessing(id);
     try {
       const { error: wError } = await supabase
-        .from('withdrawals')
+        .from('withdrawal_requests')
         .update({
           status: 'rejected',
-          admin_note: reason
+          admin_notes: reason
         })
         .eq('id', id);
 
@@ -275,9 +278,10 @@ export function AdminPanel() {
       if (balanceError) throw balanceError;
 
       const { error: notifError } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .insert({
           user_id: userId,
+          type: 'error',
           title: 'Retiro Rechazado',
           message: `Tu retiro de $${amount} fue rechazado y los fondos devueltos a tu balance. Razón: ${reason}`
         });
@@ -309,7 +313,7 @@ export function AdminPanel() {
       if (notificationTarget === 'all') {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('user_id');
+          .select('id');
 
         if (!profiles || profiles.length === 0) {
           alert('No hay usuarios registrados');
@@ -317,13 +321,14 @@ export function AdminPanel() {
         }
 
         const notifications = profiles.map(profile => ({
-          user_id: profile.user_id,
+          user_id: profile.id,
+          type: 'info',
           title: notificationTitle,
           message: notificationMessage
         }));
 
         const { error } = await supabase
-          .from('notifications')
+          .from('user_notifications')
           .insert(notifications);
 
         if (error) throw error;
@@ -331,7 +336,7 @@ export function AdminPanel() {
       } else {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('user_id')
+          .select('id')
           .eq('email', targetEmail)
           .maybeSingle();
 
@@ -341,9 +346,10 @@ export function AdminPanel() {
         }
 
         const { error } = await supabase
-          .from('notifications')
+          .from('user_notifications')
           .insert({
-            user_id: profile.user_id,
+            user_id: profile.id,
+            type: 'info',
             title: notificationTitle,
             message: notificationMessage
           });
