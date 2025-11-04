@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let authSubscription: any = null;
 
     const initAuth = async () => {
       try {
@@ -57,42 +58,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (error) {
           console.error('Session error:', error);
-          setLoading(false);
-          return;
         }
 
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await fetchProfile(session.user.id);
+          fetchProfile(session.user.id).catch(err => console.error('Profile fetch error:', err));
         }
-
-        setLoading(false);
       } catch (err) {
         console.error('Init auth error:', err);
+      } finally {
         if (mounted) {
-          setLoading(false);
+          setTimeout(() => setLoading(false), 100);
         }
       }
     };
 
-    initAuth();
+    const setupListener = () => {
+      try {
+        const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+          if (!mounted) return;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
+          setUser(session?.user ?? null);
 
-      setUser(session?.user ?? null);
+          if (session?.user) {
+            fetchProfile(session.user.id).catch(err => console.error('Profile fetch error:', err));
+          } else {
+            setProfile(null);
+          }
+        });
 
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
+        authSubscription = data.subscription;
+      } catch (err) {
+        console.error('Auth listener error:', err);
       }
-    });
+    };
+
+    initAuth();
+    setupListener();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      if (authSubscription) {
+        try {
+          authSubscription.unsubscribe();
+        } catch (err) {
+          console.error('Unsubscribe error:', err);
+        }
+      }
     };
   }, []);
 
