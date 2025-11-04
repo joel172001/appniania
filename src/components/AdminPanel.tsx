@@ -14,9 +14,14 @@ export function AdminPanel() {
     const auth = sessionStorage.getItem('admin_authenticated');
     if (auth === 'true') {
       setIsAuthenticated(true);
-      loadData();
     }
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated && deposits.length === 0 && withdrawals.length === 0 && !loading) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +30,6 @@ export function AdminPanel() {
     if (password === correctPassword) {
       setIsAuthenticated(true);
       sessionStorage.setItem('admin_authenticated', 'true');
-      loadData();
     } else {
       alert('Contraseña incorrecta');
       setPassword('');
