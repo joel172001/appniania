@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Upload, FileText, Check, X, Clock, AlertCircle } from 'lucide-react';
+import { FileText, Check, X, Clock, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { ImageCapture } from './ImageCapture';
 
 export function VerificationSettings() {
   const { user, profile, refreshProfile } = useAuth();
@@ -278,58 +279,31 @@ export function VerificationSettings() {
           </div>
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Document Front Side</label>
-          <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-slate-500 transition-colors">
-            <Upload className="mx-auto text-slate-400 mb-2" size={32} />
-            <p className="text-slate-300 text-sm mb-1">
-              {documentFront ? documentFront.name : 'Upload front side'}
-            </p>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setDocumentFront(e.target.files?.[0] || null)}
-              className="w-full text-sm text-slate-400"
-              required
-            />
-          </div>
-        </div>
+        <ImageCapture
+          label="Lado Frontal del Documento"
+          description="Toma una foto clara del frente de tu documento de identidad"
+          onCapture={setDocumentFront}
+          captured={documentFront}
+          required
+        />
 
         {documentType === 'national_id' && (
-          <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">Document Back Side</label>
-            <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-slate-500 transition-colors">
-              <Upload className="mx-auto text-slate-400 mb-2" size={32} />
-              <p className="text-slate-300 text-sm mb-1">
-                {documentBack ? documentBack.name : 'Upload back side'}
-              </p>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setDocumentBack(e.target.files?.[0] || null)}
-                className="w-full text-sm text-slate-400"
-                required
-              />
-            </div>
-          </div>
+          <ImageCapture
+            label="Lado Posterior del Documento"
+            description="Toma una foto clara de la parte trasera de tu documento de identidad"
+            onCapture={setDocumentBack}
+            captured={documentBack}
+            required
+          />
         )}
 
-        <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Selfie Photo</label>
-          <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:border-slate-500 transition-colors">
-            <Upload className="mx-auto text-slate-400 mb-2" size={32} />
-            <p className="text-slate-300 text-sm mb-1">
-              {selfie ? selfie.name : 'Upload a selfie holding your ID'}
-            </p>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setSelfie(e.target.files?.[0] || null)}
-              className="w-full text-sm text-slate-400"
-              required
-            />
-          </div>
-        </div>
+        <ImageCapture
+          label="Selfie con tu Documento"
+          description="Toma una selfie sosteniendo tu documento de identidad junto a tu rostro"
+          onCapture={setSelfie}
+          captured={selfie}
+          required
+        />
 
         {error && (
           <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
