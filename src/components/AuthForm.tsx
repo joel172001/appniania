@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { LogIn, UserPlus, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { PhoneVerification } from './PhoneVerification';
 
 interface AuthFormProps {
   onBack?: () => void;
@@ -16,6 +17,8 @@ export function AuthForm({ onBack }: AuthFormProps) {
   const [referralCode, setReferralCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [pendingPhoneNumber, setPendingPhoneNumber] = useState('');
   const { signUp, signIn } = useAuth();
 
   useEffect(() => {
@@ -43,18 +46,54 @@ export function AuthForm({ onBack }: AuthFormProps) {
         if (!phoneNumber) {
           throw new Error('Phone number is required');
         }
-        const { error } = await signUp(email, password, fullName, phoneNumber, referralCode || undefined);
-        if (error) throw error;
+        setPendingPhoneNumber(phoneNumber);
+        setShowVerification(true);
+        setLoading(false);
       } else {
         const { error } = await signIn(email, password);
         if (error) throw error;
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred');
+      setLoading(false);
+    }
+  };
+
+  const handleVerificationComplete = async () => {
+    setLoading(true);
+    try {
+      const { error } = await signUp(email, password, fullName, phoneNumber, referralCode || undefined);
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+      setShowVerification(false);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSkipVerification = async () => {
+    setLoading(true);
+    try {
+      const { error } = await signUp(email, password, fullName, phoneNumber, referralCode || undefined);
+      if (error) throw error;
+    } catch (err: any) {
+      setError(err.message || 'An error occurred');
+      setShowVerification(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (showVerification) {
+    return (
+      <PhoneVerification
+        phoneNumber={pendingPhoneNumber}
+        onVerified={handleVerificationComplete}
+        onSkip={handleSkipVerification}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
