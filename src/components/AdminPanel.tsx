@@ -1,32 +1,37 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { CheckCircle, XCircle, DollarSign, ArrowDownToLine, ArrowUpFromLine, RefreshCw, Lock, Bell, Send } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowDownToLine, ArrowUpFromLine, RefreshCw, Lock, Bell, Send } from 'lucide-react';
 
-type PendingDeposit = {
+type Transaction = {
   id: string;
   user_id: string;
-  user_email: string;
   amount: number;
-  tx_hash: string | null;
+  status: string;
   created_at: string;
+  tx_hash?: string;
 };
 
-type PendingWithdrawal = {
+type Withdrawal = {
   id: string;
   user_id: string;
-  user_email: string;
   amount: number;
   usdt_address: string;
+  status: string;
   requested_at: string;
+};
+
+type Profile = {
+  user_id: string;
+  email: string;
 };
 
 export function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [deposits, setDeposits] = useState<PendingDeposit[]>([]);
-  const [withdrawals, setWithdrawals] = useState<PendingWithdrawal[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [deposits, setDeposits] = useState<any[]>([]);
+  const [withdrawals, setWithdrawals] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState<string | null>(null);
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [notificationTitle, setNotificationTitle] = useState('');
@@ -39,11 +44,14 @@ export function AdminPanel() {
     const auth = sessionStorage.getItem('admin_authenticated');
     if (auth === 'true') {
       setIsAuthenticated(true);
-      loadData();
-    } else {
-      setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,75 +73,49 @@ export function AdminPanel() {
     setPassword('');
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700 p-8 max-w-md w-full">
-          <div className="flex justify-center mb-6">
-            <div className="p-4 bg-blue-500/20 rounded-full">
-              <Lock size={48} className="text-blue-400" />
-            </div>
-          </div>
-
-          <h1 className="text-3xl font-bold text-white text-center mb-2">
-            Panel de Administración
-          </h1>
-          <p className="text-slate-400 text-center mb-8">
-            Ingresa la contraseña para acceder
-          </p>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
-                placeholder="Ingresa la contraseña"
-                autoFocus
-              />
-            </div>
-
-            {authError && (
-              <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
-                {authError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all"
-            >
-              Iniciar Sesión
-            </button>
-          </form>
-
-          <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-            <p className="text-slate-400 text-xs text-center">
-              La contraseña por defecto es: <code className="text-blue-400">Admin2024!</code>
-            </p>
-            <p className="text-slate-400 text-xs text-center mt-2">
-              Puedes cambiarla en el archivo .env
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const loadData = async () => {
-    if (!isAuthenticated) return;
-
     setLoading(true);
     try {
-      const { data: depositsData } = await supabase.rpc('list_pending_deposits');
-      const { data: withdrawalsData } = await supabase.rpc('list_pending_withdrawals');
+      const { data: transactionsData, error: tError } = await supabase
+        .from('transactions')
+        .select(`
+          id,
+          user_id,
+          amount,
+          status,
+          created_at,
+          tx_hash,
+          profiles!inner(email)
+        `)
+        .eq('type', 'deposit')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-      setDeposits(depositsData || []);
-      setWithdrawals(withdrawalsData || []);
+      const { data: withdrawalsData, error: wError } = await supabase
+        .from('withdrawals')
+        .select(`
+          id,
+          user_id,
+          amount,
+          usdt_address,
+          status,
+          requested_at,
+          profiles!inner(email)
+        `)
+        .eq('status', 'pending')
+        .order('requested_at', { ascending: false });
+
+      if (tError) {
+        console.error('Error loading deposits:', tError);
+      } else {
+        setDeposits(transactionsData || []);
+      }
+
+      if (wError) {
+        console.error('Error loading withdrawals:', wError);
+      } else {
+        setWithdrawals(withdrawalsData || []);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -141,30 +123,47 @@ export function AdminPanel() {
     }
   };
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadData();
-    }
-  }, [isAuthenticated]);
-
-  const handleApproveDeposit = async (id: string, email: string, amount: number) => {
+  const handleApproveDeposit = async (id: string, email: string, amount: number, userId: string) => {
     if (!confirm(`¿Aprobar depósito de $${amount} para ${email}?`)) return;
 
     setProcessing(id);
     try {
-      const { data, error } = await supabase.rpc('approve_deposit', {
-        p_transaction_id: id,
-        p_admin_note: 'Aprobado desde panel de admin'
-      });
+      const { error: txError } = await supabase
+        .from('transactions')
+        .update({ status: 'completed' })
+        .eq('id', id);
 
-      if (error) throw error;
+      if (txError) throw txError;
 
-      if (data.success) {
-        alert(`✅ Depósito aprobado! $${amount} agregado al balance de ${email}`);
-        loadData();
-      } else {
-        alert(`❌ Error: ${data.message}`);
-      }
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const newBalance = (profile.balance || 0) + amount;
+
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('user_id', userId);
+
+      if (balanceError) throw balanceError;
+
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title: 'Depósito Aprobado',
+          message: `Tu depósito de $${amount} ha sido aprobado y agregado a tu balance.`
+        });
+
+      if (notifError) console.error('Notification error:', notifError);
+
+      alert(`✅ Depósito aprobado! $${amount} agregado al balance de ${email}`);
+      loadData();
     } catch (error: any) {
       alert(`Error: ${error.message}`);
     } finally {
@@ -172,25 +171,34 @@ export function AdminPanel() {
     }
   };
 
-  const handleRejectDeposit = async (id: string, email: string, amount: number) => {
+  const handleRejectDeposit = async (id: string, email: string, amount: number, userId: string) => {
     const reason = prompt(`¿Rechazar depósito de $${amount} para ${email}?\n\nEscribe la razón:`);
     if (!reason) return;
 
     setProcessing(id);
     try {
-      const { data, error } = await supabase.rpc('reject_deposit', {
-        p_transaction_id: id,
-        p_reason: reason
-      });
+      const { error: txError } = await supabase
+        .from('transactions')
+        .update({
+          status: 'failed',
+          admin_note: reason
+        })
+        .eq('id', id);
 
-      if (error) throw error;
+      if (txError) throw txError;
 
-      if (data.success) {
-        alert(`❌ Depósito rechazado para ${email}`);
-        loadData();
-      } else {
-        alert(`Error: ${data.message}`);
-      }
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title: 'Depósito Rechazado',
+          message: `Tu depósito de $${amount} fue rechazado. Razón: ${reason}`
+        });
+
+      if (notifError) console.error('Notification error:', notifError);
+
+      alert(`❌ Depósito rechazado para ${email}`);
+      loadData();
     } catch (error: any) {
       alert(`Error: ${error.message}`);
     } finally {
@@ -198,25 +206,34 @@ export function AdminPanel() {
     }
   };
 
-  const handleApproveWithdrawal = async (id: string, email: string, amount: number, address: string) => {
+  const handleApproveWithdrawal = async (id: string, email: string, amount: number, address: string, userId: string) => {
     const txHash = prompt(`¿Aprobar retiro de $${amount} para ${email}?\n\nDirección: ${address}\n\nIngresa el hash de la transacción (opcional):`);
     if (txHash === null) return;
 
     setProcessing(id);
     try {
-      const { data, error } = await supabase.rpc('approve_withdrawal', {
-        p_withdrawal_id: id,
-        p_admin_note: txHash ? `TX Hash: ${txHash}` : 'Aprobado desde panel de admin'
-      });
+      const { error: wError } = await supabase
+        .from('withdrawals')
+        .update({
+          status: 'completed',
+          admin_note: txHash ? `TX Hash: ${txHash}` : 'Aprobado'
+        })
+        .eq('id', id);
 
-      if (error) throw error;
+      if (wError) throw wError;
 
-      if (data.success) {
-        alert(`✅ Retiro aprobado! Enviado $${amount} a ${address}`);
-        loadData();
-      } else {
-        alert(`Error: ${data.message}`);
-      }
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title: 'Retiro Aprobado',
+          message: `Tu retiro de $${amount} ha sido procesado y enviado a tu dirección.${txHash ? ` TX: ${txHash}` : ''}`
+        });
+
+      if (notifError) console.error('Notification error:', notifError);
+
+      alert(`✅ Retiro aprobado! Enviado $${amount} a ${address}`);
+      loadData();
     } catch (error: any) {
       alert(`Error: ${error.message}`);
     } finally {
@@ -224,25 +241,51 @@ export function AdminPanel() {
     }
   };
 
-  const handleRejectWithdrawal = async (id: string, email: string, amount: number) => {
+  const handleRejectWithdrawal = async (id: string, email: string, amount: number, userId: string) => {
     const reason = prompt(`¿Rechazar retiro de $${amount} para ${email}?\n\nLos fondos serán devueltos al usuario.\n\nEscribe la razón:`);
     if (!reason) return;
 
     setProcessing(id);
     try {
-      const { data, error } = await supabase.rpc('reject_withdrawal', {
-        p_withdrawal_id: id,
-        p_reason: reason
-      });
+      const { error: wError } = await supabase
+        .from('withdrawals')
+        .update({
+          status: 'rejected',
+          admin_note: reason
+        })
+        .eq('id', id);
 
-      if (error) throw error;
+      if (wError) throw wError;
 
-      if (data.success) {
-        alert(`❌ Retiro rechazado. $${amount} devuelto a ${email}`);
-        loadData();
-      } else {
-        alert(`Error: ${data.message}`);
-      }
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('balance')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      const newBalance = (profile.balance || 0) + amount;
+
+      const { error: balanceError } = await supabase
+        .from('profiles')
+        .update({ balance: newBalance })
+        .eq('user_id', userId);
+
+      if (balanceError) throw balanceError;
+
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title: 'Retiro Rechazado',
+          message: `Tu retiro de $${amount} fue rechazado y los fondos devueltos a tu balance. Razón: ${reason}`
+        });
+
+      if (notifError) console.error('Notification error:', notifError);
+
+      alert(`❌ Retiro rechazado. $${amount} devuelto a ${email}`);
+      loadData();
     } catch (error: any) {
       alert(`Error: ${error.message}`);
     } finally {
@@ -320,6 +363,62 @@ export function AdminPanel() {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700 p-8 max-w-md w-full">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-blue-500/20 rounded-full">
+              <Lock size={48} className="text-blue-400" />
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-bold text-white text-center mb-2">
+            Panel de Administración
+          </h1>
+          <p className="text-slate-400 text-center mb-8">
+            Ingresa la contraseña para acceder
+          </p>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                placeholder="Ingresa la contraseña"
+                autoFocus
+              />
+            </div>
+
+            {authError && (
+              <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm">
+                {authError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all"
+            >
+              Iniciar Sesión
+            </button>
+          </form>
+
+          <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
+            <p className="text-slate-400 text-xs text-center">
+              La contraseña por defecto es: <code className="text-blue-400">Admin2024!</code>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
@@ -331,7 +430,7 @@ export function AdminPanel() {
           <div className="flex gap-3">
             <button
               onClick={() => setShowNotificationModal(true)}
-              className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
             >
               <Bell size={20} />
               Enviar Notificación
@@ -379,7 +478,7 @@ export function AdminPanel() {
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <p className="text-white font-semibold">{deposit.user_email}</p>
+                        <p className="text-white font-semibold">{deposit.profiles.email}</p>
                         <p className="text-slate-400 text-sm">
                           {new Date(deposit.created_at).toLocaleString('es-ES')}
                         </p>
@@ -400,7 +499,7 @@ export function AdminPanel() {
 
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleApproveDeposit(deposit.id, deposit.user_email, deposit.amount)}
+                        onClick={() => handleApproveDeposit(deposit.id, deposit.profiles.email, deposit.amount, deposit.user_id)}
                         disabled={processing === deposit.id}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50"
                       >
@@ -408,7 +507,7 @@ export function AdminPanel() {
                         Aprobar
                       </button>
                       <button
-                        onClick={() => handleRejectDeposit(deposit.id, deposit.user_email, deposit.amount)}
+                        onClick={() => handleRejectDeposit(deposit.id, deposit.profiles.email, deposit.amount, deposit.user_id)}
                         disabled={processing === deposit.id}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
                       >
@@ -446,7 +545,7 @@ export function AdminPanel() {
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <p className="text-white font-semibold">{withdrawal.user_email}</p>
+                        <p className="text-white font-semibold">{withdrawal.profiles.email}</p>
                         <p className="text-slate-400 text-sm">
                           {new Date(withdrawal.requested_at).toLocaleString('es-ES')}
                         </p>
@@ -465,7 +564,7 @@ export function AdminPanel() {
 
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleApproveWithdrawal(withdrawal.id, withdrawal.user_email, withdrawal.amount, withdrawal.usdt_address)}
+                        onClick={() => handleApproveWithdrawal(withdrawal.id, withdrawal.profiles.email, withdrawal.amount, withdrawal.usdt_address, withdrawal.user_id)}
                         disabled={processing === withdrawal.id}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50"
                       >
@@ -473,7 +572,7 @@ export function AdminPanel() {
                         Aprobar
                       </button>
                       <button
-                        onClick={() => handleRejectWithdrawal(withdrawal.id, withdrawal.user_email, withdrawal.amount)}
+                        onClick={() => handleRejectWithdrawal(withdrawal.id, withdrawal.profiles.email, withdrawal.amount, withdrawal.user_id)}
                         disabled={processing === withdrawal.id}
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
                       >
@@ -487,12 +586,6 @@ export function AdminPanel() {
             )}
           </div>
         </div>
-
-        <div className="mt-8 bg-yellow-500/10 border border-yellow-500/50 rounded-xl p-4">
-          <p className="text-yellow-400 text-sm">
-            <strong>Acceso:</strong> Para acceder a este panel, ve a: <code className="bg-yellow-500/20 px-2 py-1 rounded">/admin</code>
-          </p>
-        </div>
       </div>
 
       {showNotificationModal && (
@@ -502,7 +595,7 @@ export function AdminPanel() {
               <h2 className="text-2xl font-bold text-white">Enviar Notificación</h2>
               <button
                 onClick={() => setShowNotificationModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-white text-2xl"
               >
                 ✕
               </button>
@@ -544,7 +637,7 @@ export function AdminPanel() {
                     type="email"
                     value={targetEmail}
                     onChange={(e) => setTargetEmail(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                     placeholder="usuario@ejemplo.com"
                   />
                 </div>
@@ -558,7 +651,7 @@ export function AdminPanel() {
                   type="text"
                   value={notificationTitle}
                   onChange={(e) => setNotificationTitle(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500"
                   placeholder="Título de la notificación"
                 />
               </div>
@@ -570,7 +663,7 @@ export function AdminPanel() {
                 <textarea
                   value={notificationMessage}
                   onChange={(e) => setNotificationMessage(e.target.value)}
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-32"
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-green-500 min-h-32"
                   placeholder="Escribe tu mensaje aquí..."
                 />
               </div>
@@ -585,7 +678,7 @@ export function AdminPanel() {
                 <button
                   onClick={handleSendNotification}
                   disabled={sending}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors disabled:opacity-50"
                 >
                   <Send size={18} />
                   {sending ? 'Enviando...' : 'Enviar'}
