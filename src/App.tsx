@@ -1,23 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LandingPage } from './components/LandingPage';
 import { AuthForm } from './components/AuthForm';
 import { Dashboard } from './components/Dashboard';
-import { AdminPanel } from './components/AdminPanel';
 
 function AppContent() {
   const { user, loading } = useAuth();
   const [showAuth, setShowAuth] = useState(false);
-  const [currentRoute, setCurrentRoute] = useState(window.location.pathname);
-
-  useEffect(() => {
-    const handlePopState = () => {
-      setCurrentRoute(window.location.pathname);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
   if (loading) {
     return (
@@ -25,10 +14,6 @@ function AppContent() {
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
-  }
-
-  if (currentRoute === '/admin') {
-    return <AdminPanel />;
   }
 
   if (user) return <Dashboard />;
