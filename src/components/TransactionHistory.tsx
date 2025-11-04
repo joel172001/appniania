@@ -70,51 +70,51 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
   };
 
   return (
-    <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
-      <h2 className="text-xl font-bold text-white mb-4">Recent Transactions</h2>
+    <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
+      <h2 className="text-lg sm:text-xl font-bold text-white mb-4">Recent Transactions</h2>
 
       {transactions.length === 0 ? (
         <div className="text-center py-8 text-slate-400">
           <Clock size={48} className="mx-auto mb-3 opacity-50" />
-          <p>No transactions yet</p>
-          <p className="text-sm mt-1">Your transaction history will appear here</p>
+          <p className="text-sm sm:text-base">No transactions yet</p>
+          <p className="text-xs sm:text-sm mt-1">Your transaction history will appear here</p>
         </div>
       ) : (
         <div className="space-y-2">
           {transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 hover:border-slate-500 transition-colors"
+              className="bg-slate-700/50 rounded-lg p-3 sm:p-4 border border-slate-600 hover:border-slate-500 transition-colors"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
+              <div className="flex items-start sm:items-center justify-between gap-2">
+                <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-600 flex items-center justify-center flex-shrink-0">
                     {getTransactionIcon(transaction.type)}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-white truncate">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                      <h3 className="font-semibold text-white text-sm sm:text-base truncate">
                         {getTypeLabel(transaction.type)}
                       </h3>
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
                           transaction.status
-                        )}`}
+                        )} w-fit`}
                       >
                         {transaction.status}
                       </span>
                     </div>
                     {transaction.description && (
-                      <p className="text-sm text-slate-400 truncate">{transaction.description}</p>
+                      <p className="text-xs sm:text-sm text-slate-400 truncate">{transaction.description}</p>
                     )}
                     <p className="text-xs text-slate-500 mt-1">{formatDate(transaction.created_at)}</p>
                   </div>
                 </div>
 
-                <div className="text-right ml-4">
+                <div className="text-right flex-shrink-0">
                   <p
-                    className={`font-bold ${
+                    className={`font-bold text-sm sm:text-base ${
                       transaction.type === 'deposit' || transaction.type === 'earning'
                         ? 'text-emerald-400'
                         : transaction.type === 'withdrawal'

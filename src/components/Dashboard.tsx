@@ -163,8 +163,8 @@ export function Dashboard() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+      <main className="w-full mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8 max-w-[100vw] overflow-x-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
             <div className="flex items-center justify-between mb-2">
               <span className="text-slate-400 text-xs sm:text-sm">Total Balance</span>
@@ -224,7 +224,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6 mb-8">
           <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
               <h2 className="text-lg sm:text-xl font-bold text-white">Active Investments</h2>
@@ -255,35 +255,35 @@ export function Dashboard() {
                   return (
                     <div
                       key={investment.id}
-                      className="bg-slate-700/50 rounded-lg p-4 border border-slate-600"
+                      className="bg-slate-700/50 rounded-lg p-3 sm:p-4 border border-slate-600"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-semibold text-white">{plan?.name}</h3>
-                          <p className="text-sm text-slate-400">
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-white text-sm sm:text-base truncate">{plan?.name}</h3>
+                          <p className="text-xs sm:text-sm text-slate-400">
                             {plan?.daily_return_percentage}% daily for {plan?.duration_days} days
                           </p>
                         </div>
-                        <span className="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-xs font-medium">
+                        <span className="bg-emerald-500/20 text-emerald-400 px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
                           Active
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-slate-600">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-3 pt-3 border-t border-slate-600">
                         <div>
                           <p className="text-xs text-slate-400">Invested</p>
-                          <p className="text-white font-semibold">${investment.amount.toFixed(2)}</p>
+                          <p className="text-white font-semibold text-sm sm:text-base">${investment.amount.toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-slate-400">Earned</p>
-                          <p className="text-emerald-400 font-semibold">${investment.total_earned.toFixed(2)}</p>
+                          <p className="text-emerald-400 font-semibold text-sm sm:text-base">${investment.total_earned.toFixed(2)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-slate-400">Days Active</p>
-                          <p className="text-white font-semibold">{daysActive} / {plan?.duration_days}</p>
+                          <p className="text-white font-semibold text-sm sm:text-base">{daysActive} / {plan?.duration_days}</p>
                         </div>
                         <div>
                           <p className="text-xs text-slate-400">Status</p>
-                          <p className="text-white font-semibold">
+                          <p className="text-white font-semibold text-sm sm:text-base">
                             {((daysActive / (plan?.duration_days || 1)) * 100).toFixed(0)}%
                           </p>
                         </div>
