@@ -48,64 +48,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    let authSubscription: any = null;
 
-    const initAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (!mounted) return;
-
-        if (error) {
-          console.error('Session error:', error);
-        }
-
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (mounted) {
         setUser(session?.user ?? null);
-
         if (session?.user) {
-          fetchProfile(session.user.id).catch(err => console.error('Profile fetch error:', err));
+          fetchProfile(session.user.id);
         }
-      } catch (err) {
-        console.error('Init auth error:', err);
-      } finally {
-        if (mounted) {
-          setTimeout(() => setLoading(false), 100);
+        setLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
         }
       }
-    };
-
-    const setupListener = () => {
-      try {
-        const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-          if (!mounted) return;
-
-          setUser(session?.user ?? null);
-
-          if (session?.user) {
-            fetchProfile(session.user.id).catch(err => console.error('Profile fetch error:', err));
-          } else {
-            setProfile(null);
-          }
-        });
-
-        authSubscription = data.subscription;
-      } catch (err) {
-        console.error('Auth listener error:', err);
-      }
-    };
-
-    initAuth();
-    setupListener();
+    });
 
     return () => {
       mounted = false;
-      if (authSubscription) {
-        try {
-          authSubscription.unsubscribe();
-        } catch (err) {
-          console.error('Unsubscribe error:', err);
-        }
-      }
+      subscription.unsubscribe();
     };
   }, []);
 
