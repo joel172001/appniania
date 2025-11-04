@@ -54,7 +54,9 @@ export function AdminPanel() {
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
-      console.log('📥 Depósitos:', depositsData, 'Error:', dError);
+      console.log('📥 Depósitos recibidos:', depositsData?.length || 0);
+      console.log('📥 Primer depósito:', depositsData?.[0]);
+      console.log('📥 Error:', dError);
 
       console.log('📤 Consultando retiros pendientes...');
       const { data: withdrawalsData, error: wError } = await supabase
@@ -63,7 +65,9 @@ export function AdminPanel() {
         .eq('status', 'pending')
         .order('requested_at', { ascending: false });
 
-      console.log('📤 Retiros:', withdrawalsData, 'Error:', wError);
+      console.log('📤 Retiros recibidos:', withdrawalsData?.length || 0);
+      console.log('📤 Primer retiro:', withdrawalsData?.[0]);
+      console.log('📤 Error:', wError);
 
       if (dError) {
         console.error('❌ Error depósitos:', dError);
@@ -308,7 +312,7 @@ export function AdminPanel() {
                   <div key={dep.id} className="bg-slate-900 rounded-xl p-4 border border-slate-700">
                     <div className="flex justify-between mb-3">
                       <div>
-                        <p className="text-white font-semibold">{dep.profiles.email}</p>
+                        <p className="text-white font-semibold">{dep.profiles?.email || 'N/A'}</p>
                         <p className="text-slate-400 text-sm">
                           {new Date(dep.created_at).toLocaleString('es-ES')}
                         </p>
@@ -355,7 +359,7 @@ export function AdminPanel() {
                   <div key={wd.id} className="bg-slate-900 rounded-xl p-4 border border-slate-700">
                     <div className="flex justify-between mb-3">
                       <div>
-                        <p className="text-white font-semibold">{wd.profiles.email}</p>
+                        <p className="text-white font-semibold">{wd.profiles?.email || 'N/A'}</p>
                         <p className="text-slate-400 text-sm">
                           {new Date(wd.requested_at).toLocaleString('es-ES')}
                         </p>
