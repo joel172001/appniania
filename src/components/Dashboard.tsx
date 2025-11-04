@@ -41,31 +41,44 @@ export function Dashboard() {
   }, [user]);
 
   const loadDashboardData = async () => {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const [investmentsData, transactionsData] = await Promise.all([
-      supabase
-        .from('investments')
-        .select('*, plan:investment_plans(*)')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user!.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
-    ]);
+      const [investmentsData, transactionsData] = await Promise.all([
+        supabase
+          .from('investments')
+          .select('*, plan:investment_plans(*)')
+          .eq('user_id', user!.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user!.id)
+          .order('created_at', { ascending: false })
+          .limit(10)
+      ]);
 
-    if (investmentsData.data) setInvestments(investmentsData.data);
-    if (transactionsData.data) setTransactions(transactionsData.data);
+      if (investmentsData.data) setInvestments(investmentsData.data);
+      if (transactionsData.data) setTransactions(transactionsData.data);
 
-    await refreshProfile();
-    setLoading(false);
+      await refreshProfile();
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const activeInvestments = investments.filter(inv => inv.status === 'active');
   const totalActiveInvestment = activeInvestments.reduce((sum, inv) => sum + inv.amount, 0);
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Cargando perfil...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
