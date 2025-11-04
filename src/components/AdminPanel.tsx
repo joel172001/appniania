@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { CheckCircle, XCircle, DollarSign, ArrowDownToLine, ArrowUpFromLine, RefreshCw, Lock } from 'lucide-react';
+import { CheckCircle, XCircle, DollarSign, ArrowDownToLine, ArrowUpFromLine, RefreshCw, Lock, Bell, Send } from 'lucide-react';
 
 type PendingDeposit = {
   id: string;
@@ -28,11 +28,18 @@ export function AdminPanel() {
   const [withdrawals, setWithdrawals] = useState<PendingWithdrawal[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState('');
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationTarget, setNotificationTarget] = useState<'all' | 'specific'>('all');
+  const [targetEmail, setTargetEmail] = useState('');
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const auth = sessionStorage.getItem('admin_authenticated');
     if (auth === 'true') {
       setIsAuthenticated(true);
+      loadData();
     } else {
       setLoading(false);
     }
@@ -118,6 +125,8 @@ export function AdminPanel() {
   }
 
   const loadData = async () => {
+    if (!isAuthenticated) return;
+
     setLoading(true);
     try {
       const { data: depositsData } = await supabase.rpc('list_pending_deposits');
@@ -133,8 +142,10 @@ export function AdminPanel() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   const handleApproveDeposit = async (id: string, email: string, amount: number) => {
     if (!confirm(`¿Aprobar depósito de $${amount} para ${email}?`)) return;
@@ -239,6 +250,76 @@ export function AdminPanel() {
     }
   };
 
+  const handleSendNotification = async () => {
+    if (!notificationTitle.trim() || !notificationMessage.trim()) {
+      alert('Por favor completa el título y mensaje');
+      return;
+    }
+
+    if (notificationTarget === 'specific' && !targetEmail.trim()) {
+      alert('Por favor ingresa el email del usuario');
+      return;
+    }
+
+    setSending(true);
+    try {
+      if (notificationTarget === 'all') {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id');
+
+        if (!profiles || profiles.length === 0) {
+          alert('No hay usuarios registrados');
+          return;
+        }
+
+        const notifications = profiles.map(profile => ({
+          user_id: profile.user_id,
+          title: notificationTitle,
+          message: notificationMessage
+        }));
+
+        const { error } = await supabase
+          .from('notifications')
+          .insert(notifications);
+
+        if (error) throw error;
+        alert(`✅ Notificación enviada a ${profiles.length} usuarios`);
+      } else {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('email', targetEmail)
+          .maybeSingle();
+
+        if (!profile) {
+          alert('Usuario no encontrado');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: profile.user_id,
+            title: notificationTitle,
+            message: notificationMessage
+          });
+
+        if (error) throw error;
+        alert(`✅ Notificación enviada a ${targetEmail}`);
+      }
+
+      setShowNotificationModal(false);
+      setNotificationTitle('');
+      setNotificationMessage('');
+      setTargetEmail('');
+    } catch (error: any) {
+      alert(`Error: ${error.message}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="container mx-auto px-4 py-8">
@@ -248,6 +329,13 @@ export function AdminPanel() {
             <p className="text-slate-300">Gestiona depósitos y retiros pendientes</p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={() => setShowNotificationModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            >
+              <Bell size={20} />
+              Enviar Notificación
+            </button>
             <button
               onClick={loadData}
               disabled={loading}
@@ -406,6 +494,107 @@ export function AdminPanel() {
           </p>
         </div>
       </div>
+
+      {showNotificationModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-lg w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Enviar Notificación</h2>
+              <button
+                onClick={() => setShowNotificationModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Destinatario
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-white cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={notificationTarget === 'all'}
+                      onChange={() => setNotificationTarget('all')}
+                      className="w-4 h-4"
+                    />
+                    Todos los usuarios
+                  </label>
+                  <label className="flex items-center gap-2 text-white cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={notificationTarget === 'specific'}
+                      onChange={() => setNotificationTarget('specific')}
+                      className="w-4 h-4"
+                    />
+                    Usuario específico
+                  </label>
+                </div>
+              </div>
+
+              {notificationTarget === 'specific' && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Email del Usuario
+                  </label>
+                  <input
+                    type="email"
+                    value={targetEmail}
+                    onChange={(e) => setTargetEmail(e.target.value)}
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="usuario@ejemplo.com"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Título
+                </label>
+                <input
+                  type="text"
+                  value={notificationTitle}
+                  onChange={(e) => setNotificationTitle(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Título de la notificación"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Mensaje
+                </label>
+                <textarea
+                  value={notificationMessage}
+                  onChange={(e) => setNotificationMessage(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-32"
+                  placeholder="Escribe tu mensaje aquí..."
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowNotificationModal(false)}
+                  className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSendNotification}
+                  disabled={sending}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <Send size={18} />
+                  {sending ? 'Enviando...' : 'Enviar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
