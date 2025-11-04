@@ -4,7 +4,6 @@ import { LandingPage } from './components/LandingPage';
 import { AuthForm } from './components/AuthForm';
 import { Dashboard } from './components/Dashboard';
 import { AdminPanel } from './components/AdminPanel';
-import { ErrorBoundary } from './components/ErrorBoundary';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -39,11 +38,9 @@ function AppContent() {
 
 function App() {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ErrorBoundary>
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
