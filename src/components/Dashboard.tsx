@@ -87,9 +87,9 @@ export function Dashboard() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                <span className="text-lg font-bold text-white">Ci</span>
+                <span className="text-lg font-bold text-white">Ac</span>
               </div>
-              <span className="text-lg sm:text-xl font-bold text-white hidden sm:inline">CryptoInvest</span>
+              <span className="text-lg sm:text-xl font-bold text-white hidden sm:inline">Acripton</span>
             </div>
 
             <div className="hidden md:flex items-center gap-4">

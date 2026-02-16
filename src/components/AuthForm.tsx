@@ -110,9 +110,9 @@ export function AuthForm({ onBack }: AuthFormProps) {
           )}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl mb-4">
-              <span className="text-2xl font-bold text-white">Ci</span>
+              <span className="text-2xl font-bold text-white">Ac</span>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">CryptoInvest</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">Acripton</h1>
             <p className="text-slate-400">Your gateway to USDT investments</p>
           </div>
 

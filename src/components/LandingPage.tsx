@@ -12,9 +12,9 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                <span className="text-lg font-bold text-white">Ci</span>
+                <span className="text-lg font-bold text-white">Ac</span>
               </div>
-              <span className="text-xl font-bold text-white">CryptoInvest</span>
+              <span className="text-xl font-bold text-white">Acripton</span>
             </div>
             <button
               onClick={onGetStarted}
