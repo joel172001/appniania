@@ -21,8 +21,6 @@ import { TransactionHistory } from './TransactionHistory';
 import { TransferModal } from './TransferModal';
 import { NotificationsPanel } from './NotificationsPanel';
 import { Settings } from './Settings';
-import { DashboardLayout } from './DashboardLayout';
-import { DashboardMain } from './DashboardMain';
 
 export function Dashboard() {
   const { user, profile, signOut, refreshProfile } = useAuth();
@@ -83,18 +81,236 @@ export function Dashboard() {
   }
 
   return (
-    <DashboardLayout
-      profile={profile}
-      onSettingsClick={() => setShowSettings(true)}
-    >
-      <DashboardMain
-        profile={profile}
-        user={user}
-        onShowInvestmentPlans={() => setShowInvestmentPlans(true)}
-        onShowDepositModal={() => setShowDepositModal(true)}
-        onShowWithdrawalModal={() => setShowWithdrawalModal(true)}
-        onShowTransferModal={() => setShowTransferModal(true)}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      <nav className="bg-slate-800/50 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-lg flex items-center justify-center">
+                <span className="text-lg font-bold text-white">Ac</span>
+              </div>
+              <span className="text-lg sm:text-xl font-bold text-white hidden sm:inline">Acripton</span>
+            </div>
+
+            <div className="hidden md:flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                {profile?.profile_photo_url ? (
+                  <img
+                    src={profile.profile_photo_url}
+                    alt="Profile"
+                    className="w-9 h-9 rounded-full object-cover ring-2 ring-blue-500/50"
+                  />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-blue-500/50">
+                    <span className="text-white text-sm font-bold">
+                      {profile?.full_name?.charAt(0).toUpperCase() || profile?.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <span className="text-slate-300 text-sm">{profile?.email}</span>
+              </div>
+              <NotificationsPanel />
+              <button
+                onClick={() => setShowSettings(true)}
+                className="text-slate-300 hover:text-white transition-colors"
+              >
+                <SettingsIcon size={20} />
+              </button>
+              <button
+                onClick={signOut}
+                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:text-white transition-colors text-sm"
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
+
+            <div className="md:hidden flex items-center gap-2">
+              <NotificationsPanel />
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="text-slate-300 hover:text-white transition-colors p-2"
+              >
+                {mobileMenuOpen ? <XIcon size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
+          </div>
+
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-slate-700 py-4 space-y-3">
+              <div className="px-4 py-2 flex items-center gap-3">
+                {profile?.profile_photo_url ? (
+                  <img
+                    src={profile.profile_photo_url}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full object-cover ring-2 ring-blue-500/50"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center ring-2 ring-blue-500/50">
+                    <span className="text-white text-sm font-bold">
+                      {profile?.full_name?.charAt(0).toUpperCase() || profile?.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <p className="text-white text-sm font-medium">{profile?.full_name || 'User'}</p>
+                  <p className="text-slate-400 text-xs">{profile?.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowSettings(true); setMobileMenuOpen(false); }}
+                className="w-full text-left px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition-colors flex items-center gap-2"
+              >
+                <SettingsIcon size={18} />
+                Settings
+              </button>
+              <button
+                onClick={() => { signOut(); setMobileMenuOpen(false); }}
+                className="w-full text-left px-4 py-2 text-slate-300 hover:text-white hover:bg-slate-700/50 rounded transition-colors flex items-center gap-2"
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      <main className="w-full mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-8 max-w-[100vw] overflow-x-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-slate-400 text-xs sm:text-sm">Total Balance</span>
+              <Wallet className="text-emerald-400" size={18} />
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
+              ${profile?.balance.toFixed(2) || '0.00'}
+            </div>
+            <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setShowDepositModal(true)}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
+                <Plus size={14} />
+                Deposit
+              </button>
+              <button
+                onClick={() => setShowWithdrawalModal(true)}
+                className="bg-cyan-500 hover:bg-cyan-600 text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-sm"
+              >
+                <ArrowUpRight size={14} />
+                Withdraw
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-slate-400 text-xs sm:text-sm">Total Invested</span>
+              <DollarSign className="text-blue-400" size={18} />
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
+              ${profile?.total_invested.toFixed(2) || '0.00'}
+            </div>
+            <div className="flex items-center gap-1 text-xs sm:text-sm text-blue-400 mt-2">
+              <ArrowUpRight size={14} />
+              {activeInvestments.length} active
+            </div>
+          </div>
+
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-slate-400 text-xs sm:text-sm">Total Earnings</span>
+              <TrendingUp className="text-cyan-400" size={18} />
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
+              ${profile?.total_earnings.toFixed(2) || '0.00'}
+            </div>
+            <button
+              onClick={() => setShowTransferModal(true)}
+              disabled={!profile?.total_earnings || profile.total_earnings < 10}
+              className="mt-3 sm:mt-4 w-full bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 text-xs sm:text-sm"
+            >
+              <ArrowDownRight size={16} />
+              Transfer to Balance
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6 mb-8">
+          <div className="bg-slate-800 rounded-xl p-4 sm:p-6 border border-slate-700">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-white">Active Investments</h2>
+              <button
+                onClick={() => setShowInvestmentPlans(true)}
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-cyan-600 transition-all flex items-center justify-center gap-2 text-sm"
+              >
+                <Plus size={16} />
+                New Investment
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-8 text-slate-400">Loading...</div>
+            ) : activeInvestments.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <Clock size={48} className="mx-auto mb-3 opacity-50" />
+                <p>No active investments yet</p>
+                <p className="text-sm mt-1">Start investing to earn daily returns</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activeInvestments.map((investment) => {
+                  const daysActive = Math.floor(
+                    (Date.now() - new Date(investment.start_date).getTime()) / (1000 * 60 * 60 * 24)
+                  );
+                  const plan = investment.plan;
+                  return (
+                    <div
+                      key={investment.id}
+                      className="bg-slate-700/50 rounded-lg p-3 sm:p-4 border border-slate-600"
+                    >
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-white text-sm sm:text-base truncate">{plan?.name}</h3>
+                          <p className="text-xs sm:text-sm text-slate-400">
+                            {plan?.daily_return_percentage}% daily for {plan?.duration_days} days
+                          </p>
+                        </div>
+                        <span className="bg-emerald-500/20 text-emerald-400 px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap">
+                          Active
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4 mt-3 pt-3 border-t border-slate-600">
+                        <div>
+                          <p className="text-xs text-slate-400">Invested</p>
+                          <p className="text-white font-semibold text-sm sm:text-base">${investment.amount.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Earned</p>
+                          <p className="text-emerald-400 font-semibold text-sm sm:text-base">${investment.total_earned.toFixed(2)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Days Active</p>
+                          <p className="text-white font-semibold text-sm sm:text-base">{daysActive} / {plan?.duration_days}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Status</p>
+                          <p className="text-white font-semibold text-sm sm:text-base">
+                            {((daysActive / (plan?.duration_days || 1)) * 100).toFixed(0)}%
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <TransactionHistory transactions={transactions} />
+        </div>
+      </main>
 
       {showInvestmentPlans && (
         <InvestmentPlans
@@ -127,6 +343,6 @@ export function Dashboard() {
       {showSettings && (
         <Settings onClose={() => setShowSettings(false)} />
       )}
-    </DashboardLayout>
+    </div>
   );
 }
